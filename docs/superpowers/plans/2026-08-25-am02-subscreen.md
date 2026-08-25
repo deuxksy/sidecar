@@ -691,7 +691,7 @@ in {
       after = [ "dev-ttyS0.device" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
-        ExecStart = "${pkgs.am02-subscreen}/bin/am02-subscreend ${cfg.port}";
+        ExecStart = "${pkgs.am02-subscreen}/bin/am02-subscreend ${cfg.port} --layout ${pkgs.am02-subscreen}/share/am02-subscreen/layout.json";
         User = "am02-sub";
         Restart = "always";
         RestartSec = "5";
