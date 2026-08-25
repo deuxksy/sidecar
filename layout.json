@@ -1,0 +1,7 @@
+{
+  "template_hex": "0000000000",
+  "fields": [
+    {"name": "cpu_temp", "offset": 0, "size": 2, "scale": 10.0, "byteorder": "little"},
+    {"name": "gpu_temp", "offset": 2, "size": 2, "scale": 10.0, "byteorder": "little"}
+  ]
+}
