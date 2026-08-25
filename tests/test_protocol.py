@@ -1,7 +1,10 @@
 """레이아웃 지정대로 바이트가 조립되는지 검증 (프로토콜 미확정 단계이므로 합성 레이아웃 사용)."""
+import struct
+import zlib
+
 import pytest
 
-from am02_subscreen.protocol import FieldSpec, FrameEncoder, load_layout
+from am02_subscreen.protocol import FieldSpec, FrameEncoder, build_frame, load_layout
 
 
 def test_encode_writes_fields_at_offsets():
@@ -43,3 +46,29 @@ def test_load_layout_builds_encoder(tmp_path):
     )
     enc = load_layout(layout)
     assert enc.encode({"cpu_temp": 2.5}) == bytes([25, 0]) + b"\xFF"
+
+
+def test_float_type_packs_ieee754():
+    # usage/package/tdp는 wire상 float — 커뮤니티 MCU 코드 COERCE_FLOAT와 정합
+    enc = FrameEncoder(b"\x00" * 4,
+                       [FieldSpec("cpu_usage", 0, 4, scale=1.0, byteorder="little", type="float")])
+    assert enc.encode({"cpu_usage": 22.0}) == struct.pack("<f", 22.0)
+
+
+def test_negative_temperature_packs_as_signed_int():
+    # 온도는 signed i32 — 겨울 음수(예: -5°C)가 ValueError 없이 2의 보수로 실려야
+    enc = FrameEncoder(b"\x00" * 4,
+                       [FieldSpec("cpu_temp", 0, 4, scale=1.0, byteorder="little")])
+    assert enc.encode({"cpu_temp": -5.0}) == (-5).to_bytes(4, "little", signed=True)
+
+
+def test_build_frame_prepends_crc32():
+    # wire = [CRC32 4B LE][payload 249B] — CRC가 앞 (실기 검증 2026-08-25, append 시 무응답)
+    payload = bytes([2]) + bytes(248)
+    frame = build_frame(payload)
+    assert frame == struct.pack("<I", zlib.crc32(payload) & 0xFFFFFFFF) + payload
+
+
+def test_build_frame_rejects_wrong_payload_size():
+    with pytest.raises(ValueError):
+        build_frame(bytes(100))

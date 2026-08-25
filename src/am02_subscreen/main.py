@@ -4,7 +4,7 @@ import threading
 from argparse import ArgumentParser
 from pathlib import Path
 
-from .protocol import FrameEncoder, load_layout
+from .protocol import FrameEncoder, build_frame, load_layout
 from .sensors import collect
 from .transport import SerialTransport
 
@@ -27,7 +27,7 @@ def run(target: str, encoder: FrameEncoder, poll: float = 1.0,
             reading = collect()
         except OSError:
             reading = None
-        if reading is not None and tx.send(encoder.encode(reading)):
+        if reading is not None and tx.send(build_frame(encoder.encode(reading))):
             sent += 1
         stop.wait(poll)  # sleep 대신: stop.set()에 즉시 반응
     tx.close()
@@ -37,7 +37,7 @@ def run(target: str, encoder: FrameEncoder, poll: float = 1.0,
 def build_parser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="am02-subscreend",
-        description="AM02 서브스크린 데몬 — CPU/GPU 온도를 전면 디스플레이로 전송")
+        description="AM02 서브스크린 데몬 — 온도·시각을 전면 디스플레이로 전송")
     parser.add_argument("target", nargs="?", default=DEFAULT_PORT,
                         help="시리얼 포트 또는 pyserial URL (기본: %(default)s)")
     parser.add_argument("--layout", type=Path, default=DEFAULT_LAYOUT,

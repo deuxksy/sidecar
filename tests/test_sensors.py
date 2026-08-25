@@ -1,5 +1,7 @@
 """collect()가 hwmon name/label 기반으로 온도를 찾는지 검증 (가짜 sysfs 트리 사용)."""
+import time
 from pathlib import Path
+
 from am02_subscreen.sensors import collect
 
 
@@ -32,3 +34,19 @@ def test_collect_returns_none_when_sensor_missing(tmp_path):
 
     assert metrics["cpu_temp"] is None
     assert metrics["gpu_temp"] is None
+
+
+def test_collect_includes_wall_clock_for_mcu_sync(tmp_path):
+    """MCU RTC 동기화용 로컬 시각 — year≠0 첫 프레임에만 래치되므로 매 프레임 첨부."""
+    before = time.localtime()
+    metrics = collect(tmp_path)
+    after = time.localtime()
+
+    # collect 수행 전후 어느 쪽 시각과도 일치하면 통과 (경계 통과 허용)
+    for key, attr in [("time_year", "tm_year"), ("time_month", "tm_mon"),
+                      ("time_day", "tm_mday"), ("time_hour", "tm_hour"),
+                      ("time_minute", "tm_min"), ("time_second", "tm_sec")]:
+        assert metrics[key] in {getattr(before, attr), getattr(after, attr)}
+    # wire 요일은 0=Sunday — 파이썬 tm_wday(0=Monday) 변환 (실기 2026-08-25 "Tuesday" 렌더 검증)
+    assert metrics["time_dow"] in {(before.tm_wday + 1) % 7, (after.tm_wday + 1) % 7}
+    assert metrics["time_year"] >= 2000  # year≠0 — MCU 래치 조건

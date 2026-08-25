@@ -17,8 +17,17 @@ def read_temperature(hwmon_root: Path, chip: str, label: str) -> float | None:
 
 
 def collect(hwmon_root: Path = Path("/sys/class/hwmon")) -> dict:
-    return {
+    metrics = {
         "cpu_temp": read_temperature(hwmon_root, "k10temp", "Tctl"),
         "gpu_temp": read_temperature(hwmon_root, "amdgpu", "edge"),
         "unix_ts": time.time(),
     }
+    # 로컬 시각 — MCU는 year≠0인 첫 프레임에만 RTC를 동기화하고 이후 무시하므로
+    # 매 프레임 실어도 무해하고, 데몬 시작 프레임이 곧 동기화 프레임이 된다
+    now = time.localtime()
+    metrics.update({
+        "time_year": now.tm_year, "time_month": now.tm_mon, "time_day": now.tm_mday,
+        "time_dow": (now.tm_wday + 1) % 7,  # 파이썬 0=Monday → wire 0=Sunday
+        "time_hour": now.tm_hour, "time_minute": now.tm_min, "time_second": now.tm_sec,
+    })
+    return metrics
