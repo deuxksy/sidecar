@@ -1,0 +1,10 @@
+.superpowers/
+.omc/
+.omx/
+.remember/
+__pycache__/
+.pytest_cache/
+result
+result-*
+dist/
+*.egg-info/
