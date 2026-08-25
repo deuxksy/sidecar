@@ -37,7 +37,7 @@ AM-02 전면 디스플레이(subscreen)에 Windows AYASPACE와 동일한 수준�
 | 펌웨어 | 내장 SD 카드에서 Buildroot Linux 부팅, 메인 OS와 완전 독립 |
 | UI 스택 | tslib(터치) + framebuffer 렌더링 |
 | GUI 데몬 | `/data/app/minipc-screen-launcher/bin/minipc-screen-launcher` |
-| 호스트 통신 데몬 | `/data/app/launcher-comm` — 시리얼(COM) 115200 baud |
+| 호스트 통신 데몬 | launcher-comm — 시리얼 115200 baud (AM02에서 네이티브 UART /dev/ttyS0) |
 | 데몬 간 IPC | shared_memory |
 | Windows | AYASPACE가 시리얼로 시스템 정보를 전송 |
 | Linux | 해당 역할을 하는 소프트웨어 없음 → 본 프로젝트가 채움 |
@@ -51,7 +51,7 @@ AM-02 전면 디스플레이(subscreen)에 Windows AYASPACE와 동일한 수준�
    ↓  — 배포판 무관 (NixOS/Debian/Fedora 동일 경로)
 [코어] am02-subscreend — 사용자 공간 데몬 (Python 3 + pyserial 단일 의존)
    ↓
-[전송] udev by-id 심링크로 고정된 /dev/ttyACM* (115200 baud)
+[전송] 네이티브 UART /dev/ttyS0 (ACPI PNP, 항상 고정) (115200 baud)
    ↓
 [표시] 기존 subscreen 펌웨어(launcher-comm)가 시계/온도 렌더링
 ```
@@ -65,8 +65,8 @@ AM-02 전면 디스플레이(subscreen)에 Windows AYASPACE와 동일한 수준�
    - 센서 탐색: hwmon `name`/`label` 기반 (`k10temp`→`Tctl`, `amdgpu`→`edge`), 부팅 시마다 재탐색 (hwmon 번호는 부팅마다 변동)
 3. **프로토콜 인코더 모듈** — 프레임 직렬화만 담당. 코어 루프에서 분리하여 단위 테스트 대상으로 격리
 4. **`nix/module.nix`** — NixOS 서비스 정의 (`systemd.services`) + udev 규칙
-   - 시리얼 고정: VID/PID 매칭으로 커스텀 심링크 `/dev/am02-subscreen` 생성 (장치에 시리얼번호가 없을 수 있어 `/dev/serial/by-id` 의존하지 않음)
-   - 서비스 ordering: `/dev/am02-subscreen` device unit 의존 (`After=`/`Requires=`) — 심링크 생성 전 시작 방지
+   - 접근 권한: 시스템 유저를 dialout 그룹에 추가 (/dev/ttyS0은 root:dialout 660)
+   - 서비스 ordering: `After=dev-ttyS0.device` — 장치 노드 준비 후 시작
 
 ## 실행 단계
 
@@ -87,7 +87,7 @@ AM-02 전면 디스플레이(subscreen)에 Windows AYASPACE와 동일한 수준�
 
 | 단계 | Verify |
 | :--- | :--- |
-| Phase 0 | 장치 노드와 VID/PID가 문서화됨. cold boot 3회 + USB 재연결 3회 모두에서 동일 심링크(`/dev/am02-subscreen`) 생성됨 |
+| Phase 0 | 장치가 /dev/ttyS0(16550A, ACPI PNP)로 확인됨. 프로브 스크립트 결과가 docs/phase0.md에 기록됨 |
 | Phase 1 | 스트레스 툴로 온도 인위 변경 시 캡처 프레임 내 대응 바이트 오프셋 변화가 확인됨. 동일 조건 재캡처 시 프레임 바이트 시퀀스가 재현됨 |
 | Phase 2 | 인코더 단위 테스트: 캡처된 실제 프레임(golden frame)을 코드로 재생성 → 바이트 단위 일치. PTY mock 시리얼로 1초 주기 전송 루프 단위 테스트 |
 | Phase 3 | 실기: 부팅 후 subscreen에 시계+온도 표시. 60초 관측 시 60±1회 갱신, 표시 온도 = hwmon 센서값 ±1°C. cold boot 3회 연속 자동 시작. `systemctl suspend` 1회 후 갱신 재개 (최종 성공 기준) |
@@ -98,7 +98,6 @@ AM-02 전면 디스플레이(subscreen)에 Windows AYASPACE와 동일한 수준�
 | :--- | :--- | :--- |
 | 프로토콜이 바이너리+체크섬으로 단순 캡처만으로 해석 어려움 | 중 | 반복 패턴/필드 정렬 분석, 온도 값을 인위적으로 변경하며 diff 캡처 |
 | 프로토콜이 obfuscation/암호화됨 | 저 | 백업 경로: 기기 분해 후 F1C200s UART 콘솔 진입 → `launcher-comm` Ghidra 분석 |
-| Linux에서 장치가 CDC-ACM으로 열리지 않음 (vendor-specific USB) | 저 | Phase 0에서 즉시 판명. 필요시 usbserial vendor 파라미터로 대응 |
 
 ## 확장 계획 — Debian/Fedora
 
