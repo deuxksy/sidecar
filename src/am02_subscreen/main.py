@@ -1,5 +1,6 @@
 """데몬 진입점 — 수집→인코딩→전송 루프. SIGTERM/SIGINT로 정상 종료."""
 import signal
+import sys
 import threading
 from argparse import ArgumentParser
 from pathlib import Path
@@ -51,7 +52,9 @@ def main(argv: list[str] | None = None) -> int:
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())
-    run(args.target, load_layout(args.layout), stop=stop)
+    sent = run(args.target, load_layout(args.layout), stop=stop)
+    # acceptance(60±1회/60s) 측정용 — 종료 시 송신 프레임 수
+    print(f"am02-subscreend: sent {sent} frames", file=sys.stderr)
     return 0
 
 

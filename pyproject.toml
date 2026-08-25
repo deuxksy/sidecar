@@ -7,6 +7,10 @@ dependencies = ["pyserial>=3.5"]
 [dependency-groups]
 dev = ["pytest"]
 
+[build-system]
+requires = ["uv_build>=0.7,<1"]
+build-backend = "uv_build"
+
 [project.scripts]
 am02-subscreend = "am02_subscreen.main:main"
 
