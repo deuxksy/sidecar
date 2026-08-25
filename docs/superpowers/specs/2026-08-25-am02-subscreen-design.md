@@ -42,7 +42,7 @@ AM-02 전면 디스플레이(subscreen)에 Windows AYASPACE와 동일한 수준�
 | Windows | AYASPACE가 시리얼로 시스템 정보를 전송 |
 | Linux | 해당 역할을 하는 소프트웨어 없음 → 본 프로젝트가 채움 |
 
-즉 장치가 표준 **CDC-ACM으로 인식되는 한 커널 드라이버는 불필요**하다. subscreen은 이미 독립 실행 중이며, 호스트 쪽에서 시리얼 프로토콜로 데이터를 보내주는 사용자 공간 데몬만 있으면 된다. (CDC-ACM 미인식 시에만 `usbserial` vendor 파라미터로 대응 — 리스크 표 참조)
+즉 **커널 드라이버는 불필요**하다. subscreen은 이미 독립 실행 중이며, 호스트 쪽에서 /dev/ttyS0 시리얼 프로토콜로 데이터를 보내주는 사용자 공간 데몬만 있으면 된다.
 
 ## 아키텍처
 
@@ -64,17 +64,17 @@ AM-02 전면 디스플레이(subscreen)에 Windows AYASPACE와 동일한 수준�
 2. **`am02-subscrend`** — 메인 데몬. 수집 → 인코딩 → 전송 루프 (1초 주기). 설정은 표시 항목 ON/OFF 정도로 최소화
    - 센서 탐색: hwmon `name`/`label` 기반 (`k10temp`→`Tctl`, `amdgpu`→`edge`), 부팅 시마다 재탐색 (hwmon 번호는 부팅마다 변동)
 3. **프로토콜 인코더 모듈** — 프레임 직렬화만 담당. 코어 루프에서 분리하여 단위 테스트 대상으로 격리
-4. **`nix/module.nix`** — NixOS 서비스 정의 (`systemd.services`) + udev 규칙
+4. **`nix/module.nix`** — NixOS 서비스 정의 (`systemd.services`)
    - 접근 권한: 시스템 유저를 dialout 그룹에 추가 (/dev/ttyS0은 root:dialout 660)
    - 서비스 ordering: `After=dev-ttyS0.device` — 장치 노드 준비 후 시작
 
 ## 실행 단계
 
-- **Phase 0 — 진단** (NixOS에서 즉시): `lsusb`, `dmesg | grep -iE 'tty|cdc'`, `/dev/ttyACM*` 확인 → subscreen의 USB VID/PID와 장치 노드 확보
-- **Phase 1 — 캡처 역설계** (Windows 1회 부팅): USBPcap + Wireshark으로 AYASPACE 구동 중 시리얼 트래픽 캡처 → 프레임 구조 분석 → `protocol.md` 작성
+- **Phase 0 — 진단** (NixOS에서 즉시): `/dev/ttyS0` (네이티브 16550A, ACPI PNP) 확인 → 장치 노드 확보
+- **Phase 1 — 캡처 역설계** (Windows 1회 부팅): com0com + hub4com 시리얼 MITM으로 AYASPACE 구동 중 트래픽 캡처 → 프레임 구조 분석 → `protocol.md` 작성
   - 분석 순서: 프레임 경계 식별 → 메시지 타입 분류 → 온도 인위 변경(스트레스 툴)으로 필드 오프셋 확정 → byte order/체크섬 검증 → handshake/ACK 존재 확인
 - **Phase 2 — 데몬 구현**: 프로토콜 인코더 TDD (캡처 프레임 재생성 일치) → 수집기 연결 → 실기 연동
-- **Phase 3 — NixOS 패키징**: flake + NixOS module + udev 규칙, 부팅 시 자동 시작
+- **Phase 3 — NixOS 패키징**: flake + NixOS module, 부팅 시 자동 시작
 
 ## 에러 처리
 
@@ -107,7 +107,7 @@ AM-02 전면 디스플레이(subscreen)에 Windows AYASPACE와 동일한 수준�
 | :--- | :--- | :--- |
 | 코어 데몬 | 동일 | 동일 |
 | 서비스 | NixOS module | 동일 systemd unit + `.deb`/`.rpm` |
-| 시리얼 고정 | udev rule | 동일 udev rule |
+| 시리얼 고정 | 고정 노드 /dev/ttyS0 (ACPI) | 동일 (배포판 공통 /dev) |
 
 ## 참고 자료
 
