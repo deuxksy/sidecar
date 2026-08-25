@@ -1,6 +1,4 @@
 """레이아웃 지정대로 바이트가 조립되는지 검증 (프로토콜 미확정 단계이므로 합성 레이아웃 사용)."""
-from pathlib import Path
-
 import pytest
 
 from am02_subscreen.protocol import FieldSpec, FrameEncoder, load_layout

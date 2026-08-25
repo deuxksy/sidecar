@@ -32,6 +32,12 @@ main()
 EOF
               chmod +x $out/bin/am02-subscreend
             '';
+            meta = {
+              description = "AYANEO AM-02 subscreen daemon - CPU/GPU temps over /dev/ttyS0";
+              mainProgram = "am02-subscreend";
+              license = pkgs.lib.licenses.mit;
+              platforms = [ "x86_64-linux" ];
+            };
           };
         });
       overlays.default = final: prev: {

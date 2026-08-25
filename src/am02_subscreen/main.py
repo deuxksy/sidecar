@@ -21,7 +21,13 @@ def run(target: str, encoder: FrameEncoder, poll: float = 1.0,
     tx = SerialTransport(target)
     sent = 0
     while not stop.is_set():
-        if tx.send(encoder.encode(collect())):
+        # 일시적 센서 실패(suspend/resume·udev 재열거의 FileNotFoundError/EIO)는
+        # 해당 사이클만 건너뛴다 — 전송은 transport가 자체 처리하므로 collect만 방어
+        try:
+            reading = collect()
+        except OSError:
+            reading = None
+        if reading is not None and tx.send(encoder.encode(reading)):
             sent += 1
         stop.wait(poll)  # sleep 대신: stop.set()에 즉시 반응
     tx.close()

@@ -19,6 +19,18 @@ def test_send_recovers_after_write_failure(monkeypatch):
     tx.close()
 
 
+def test_backoff_doubles_then_caps_at_max(monkeypatch):
+    # 연속 실패 시 대기는 1→2→4→8→16초로 2배 증가 후 max_backoff=30에서 정지
+    sleeps: list[float] = []
+    monkeypatch.setattr("am02_subscreen.transport.time.sleep", sleeps.append)
+    tx = SerialTransport("/dev/ttyAM02-없는포트")
+
+    for _ in range(7):
+        assert tx.send(b"\x00") is False
+
+    assert sleeps == [1, 2, 4, 8, 16, 30, 30]
+
+
 def test_send_succeeds_on_valid_target():
     tx = SerialTransport("loop://")
     assert tx.send(b"\xAA\x01") is True

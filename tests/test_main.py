@@ -28,6 +28,34 @@ def test_run_sends_one_frame_then_stops(monkeypatch):
     assert sent == 1
 
 
+def test_run_skips_cycle_on_transient_collect_failure(monkeypatch):
+    # suspend/resume·udev 재열거 시 collect()가 FileNotFoundError를 던져도
+    # 데몬은 죽지 않고 해당 사이클만 건너뛴 뒤 정상 송신해야 함
+    calls = {"n": 0}
+
+    def flaky_collect():
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise FileNotFoundError("/sys/class/hwmon/hwmon3/temp1_input")
+        return {"cpu_temp": 44.0, "gpu_temp": 42.0, "unix_ts": 0.0}
+
+    monkeypatch.setattr(main_mod, "collect", flaky_collect)
+
+    stop = threading.Event()
+    orig_send = main_mod.SerialTransport.send
+
+    def send_once_then_stop(self, data):
+        result = orig_send(self, data)
+        stop.set()
+        return result
+
+    monkeypatch.setattr(main_mod.SerialTransport, "send", send_once_then_stop)
+
+    sent = run("loop://", load_layout(LAYOUT), poll=0.01, stop=stop)
+
+    assert sent == 1  # 실패 사이클 건너뛴 뒤 1회 송신 — OSError는 치명적이지 않음
+
+
 def test_cli_parses_target_and_layout_option():
     args = main_mod.build_parser().parse_args(["loop://", "--layout", str(LAYOUT)])
     assert args.target == "loop://"
