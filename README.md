@@ -7,10 +7,12 @@ Linux with Python 3 + pyserial).
 
 ## Status
 
-**WORK IN PROGRESS.** The subscreen display protocol is still being
-reverse-engineered, so `layout.json` is a placeholder and the screen will not
-update yet. The hardware layer is verified: the subscreen sits on a native
-UART at `/dev/ttyS0` (115200 8N1).
+Protocol **confirmed (v2)** via 3-way cross-validation (AYASPACE reverse
+engineering, on-hardware probing, community MCU-side decompilation) — see
+[docs/protocol.md](docs/protocol.md). On-hardware acceptance passed the 60 s
+frame-rate check and screen readout (clock/temps) on 2026-08-25; cold-boot
+autostart verification is in progress. The subscreen sits on a native UART at
+`/dev/ttyS0` (115200 8N1).
 
 ## Architecture
 
@@ -23,6 +25,11 @@ hwmon sysfs ──collect()──▶ layout.json ──encode()──▶ /dev/tt
                           layout.json — injection point once the
                           real protocol is captured
 ```
+
+## Docs
+
+- [Protocol spec (v2)](docs/protocol.md) — wire format, payload mapping, MCU RTC latch
+- [Phase 0 diagnostics](docs/phase0.md) — hardware discovery, probe experiments, reverse-engineering notes
 
 ## NixOS usage
 
@@ -44,7 +51,7 @@ Add the flake input and enable the service:
 
 ```bash
 # run the test suite (no hardware needed — tests use pyserial loop://)
-uv run --no-project --with pytest --with pyserial python -m pytest tests/
+uv run pytest
 
 # build the package
 nix build .#am02-subscreen
@@ -52,9 +59,9 @@ nix build .#am02-subscreen
 
 ## Roadmap
 
-- [ ] Capture the display protocol from Windows (AYASPACE serial traffic)
-- [ ] Replace the placeholder `layout.json` with the real frame layout
-- [ ] On-hardware acceptance: clock refresh, temp accuracy, suspend/resume
+- [x] Capture the display protocol (AYASPACE binary static analysis, MITM-free)
+- [x] Replace the placeholder `layout.json` with the real frame layout
+- [ ] On-hardware acceptance — frame rate ✅, clock ✅, temp ✅; cold-boot autostart & suspend/resume in progress
 
 Hardware structure (native UART, not USB) was established thanks to the
 [r/ayaneo AM-02 subscreen customization thread](https://www.reddit.com/r/ayaneo/comments/1isly3s/the_ayaneo_am02_subscreen_customization/).
