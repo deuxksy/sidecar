@@ -58,9 +58,9 @@
 - **CRC32 request-response**: `resPack.recv_crc32 != pack.crc32`, `recv_crc32 %08X pack_crc32: %08X`, `read failed %d/%d`, `retry conut: %d`, `Wait for read over` — MCU 응답 프레임(`resPack`)에 수신 CRC를 실어 회신(ACK). 29바이트 all-zero 관측 = "빈 resPack" 가설과 정합
 - `CMiniPCLauncher::UpdateInfo`(주기 상태 송신) / `CMiniPCLauncher::DoTask`(파일 전송 — 진행률/속도 로그 포함, 리소스/펌웨어 업데이트용)
 - GUID 2개: `{780F2CEC-5710-43AF-83E5-94C97BAF7931}`, `{E3AA11A9-EFE9-469D-A007-058707CBA4BC}` — 디바이스 인터페이스 식별 후보
-- 바이트 레벨 필드 구조는 Ghidra 디컴파일로 확정 중 → docs/protocol.md
+- 바이트 레벨 필드 구조는 Ghidra 디컴파일로 확정 중 → docs/okf/reference/protocol.md
 
 ### 커뮤니티 MCU측 분석 (교차 검증 3축)
 
 - [r/ayaneo "The AYANEO AM02 subscreen customization"](https://www.reddit.com/r/ayaneo/comments/1isly3s/) — 하드웨어: Allwinner **F1C200s** + Buildroot Linux (SD 부트), tslib/framebuffer UI, `/data/app/minipc-screen-launcher`(GUI) + `/data/app/launcher-comm`(호스트 통신) 2데몬 구조
-- vsoftster 댓글의 `minipc-screen-launcher` 역컴파일 — shareData 218B 스키마, 시간 1회 래치(`flag_5081`), cpu/gpu `{freq i, usage f, package f, temp i}` 확정. 상세 매핑은 [protocol.md](protocol.md)
+- vsoftster 댓글의 `minipc-screen-launcher` 역컴파일 — shareData 218B 스키마, 시간 1회 래치(`flag_5081`), cpu/gpu `{freq i, usage f, package f, temp i}` 확정. 상세 매핑은 [protocol.md](../reference/protocol.md)

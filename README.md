@@ -9,7 +9,7 @@ Linux with Python 3 + pyserial).
 
 Protocol **confirmed (v2)** via 3-way cross-validation (AYASPACE reverse
 engineering, on-hardware probing, community MCU-side decompilation) — see
-[docs/protocol.md](docs/protocol.md). On-hardware acceptance passed the 60 s
+[docs/okf/reference/protocol.md](docs/okf/reference/protocol.md). On-hardware acceptance passed the 60 s
 frame-rate check and screen readout (clock/temps) on 2026-08-25; cold-boot
 autostart verification is in progress. The subscreen sits on a native UART at
 `/dev/ttyS0` (115200 8N1).
@@ -28,8 +28,8 @@ hwmon sysfs ──collect()──▶ layout.json ──encode()──▶ /dev/tt
 
 ## Docs
 
-- [Protocol spec (v2)](docs/protocol.md) — wire format, payload mapping, MCU RTC latch
-- [Phase 0 diagnostics](docs/phase0.md) — hardware discovery, probe experiments, reverse-engineering notes
+- [Protocol spec (v2)](docs/okf/reference/protocol.md) — wire format, payload mapping, MCU RTC latch
+- [Phase 0 diagnostics](docs/okf/explanation/phase0.md) — hardware discovery, probe experiments, reverse-engineering notes
 
 ## NixOS usage
 

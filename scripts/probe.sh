@@ -4,7 +4,7 @@
 #   listen — 송신 없이 수신만 (MCU 자발 송신 확인)
 #   probe  — payload 송신(기본 'T=45\n', octal escape 지원: \0377 = 0xff) 후 초만큼 수신
 #   frame  — 프로토콜 검증: payload 249B(cmd@0, 나머지 0) + zlib CRC32 → 253B 송신,
-#            응답 첫 4바이트가 송신 CRC와 같은지 검증 (docs/protocol.md)
+#            응답 첫 4바이트가 송신 CRC와 같은지 검증 (docs/okf/reference/protocol.md)
 # 판별: 응답이 baud에 정비례하며 항상 0x00이면 break pulse,
 #       baud 변경 시 garbage가 나오면 실제 데이터.
 set -euo pipefail
@@ -58,7 +58,7 @@ PYEOF
     fi ;;
   demo)
     # 필드 매핑 시각 실험: 구별값 주입한 cmd=2 프레임을 반복 송신.
-    # 화면 표시 위치로 payload 필드 순서 확정 (docs/protocol.md 미확인 #1)
+    # 화면 표시 위치로 payload 필드 순서 확정 (docs/okf/reference/protocol.md 미확인 #1)
     demo_n="${2:-10}"
     demo_iv="${3:-400}"
     python3 - <<'PYEOF'
