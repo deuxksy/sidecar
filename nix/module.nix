@@ -20,6 +20,17 @@ in {
       description = "AM02 subscreen system info daemon";
       after = [ "dev-ttyS0.device" ];
       wantedBy = [ "multi-user.target" ];
+      preStart = ''
+        attempt=0
+        while [ "$attempt" -lt 60 ]; do
+          sync_status="$(${pkgs.systemd}/bin/timedatectl show --property=NTPSynchronized --value 2>/dev/null || true)"
+          if [ "$sync_status" = yes ]; then
+            exit 0
+          fi
+          sleep 1
+          attempt=$((attempt + 1))
+        done
+      '';
       serviceConfig = {
         # --layout 명시 필수: main.py 기본 경로는 Nix store에서 해석 불가
         ExecStart = "${pkgs.am02-subscreen}/bin/am02-subscreend ${cfg.port} --layout ${pkgs.am02-subscreen}/share/am02-subscreen/layout.json";
