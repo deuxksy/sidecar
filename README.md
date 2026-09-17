@@ -1,6 +1,8 @@
-# AYANEO AM-02 Subscreen 데몬
+# AYANEO AM-02 Sidecar
 
-AYANEO AM-02 미니 PC의 전면 서브스크린(시계, CPU/GPU 온도)에 내부 시리얼 링크(/dev/ttyS0, 115200 8N1)를 통해 실시간 시스템 정보를 전송하는 경량 Linux 데몬입니다. Windows 전용 AYASPACE 소프트웨어를 완벽히 대체하며, NixOS systemd 서비스 또는 Python 3 환경에서 독립 실행됩니다.
+AYANEO AM-02 미니 PC 본체(x86_64 NixOS)와 전면 보조 컴퓨터(Allwinner F1C200s ARM Linux)를 연결하는 **Sidecar** 프로젝트입니다.
+
+현재 내부 시리얼 링크(`/dev/ttyS0`, 115200 8N1)를 통해 실시간 시스템 정보(시계, CPU/GPU 온도)를 전송하는 경량 Linux 데몬(v0.1.0)이 구현되어 있으며, 향후 서브스크린 독립화 및 커스텀 UI/스트림덱으로 확장될 예정입니다. ([로드맵](ROADMAP.md) 참조)
 
 ---
 
@@ -57,6 +59,7 @@ hwmon sysfs ────collect()───▶ layout.json ────encode()�
 - [NixOS 서비스 배포](#nixos-서비스-설정) - AM02 전용 NixOS 데몬 등록 절차
 
 ### 3. 참고자료 (Reference)
+- [프로젝트 로드맵](ROADMAP.md) - Sidecar 비전 및 마일스톤 (Shell 개방, SSH, 커스텀 UI)
 - [문서 총괄 허브](docs/README.md) - 저장소 전체 문서 디렉터리 구조 안내
 - [OKF 사양서 허브](docs/okf/README.md) - AM-02 서브스크린 기술 사양 및 역설계 문서 모음
 - [시리얼 프로토콜 명세서](docs/okf/reference/protocol.md) - 253B 와이어 포맷, CRC32 체크섬, MCU RTC 래치 동작
