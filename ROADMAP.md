@@ -120,38 +120,48 @@ graph TD
 
 ---
 
-### Phase 4: Sidecar 60fps Native UI & 시스템 모니터링 대시보드
+### Phase 4: Sidecar 60fps Native UI & OpsHub 인프라 관제 대시보드
 - [ ] **크로스 컴파일 환경 구축**:
   - ARMv5TE(`arm-unknown-linux-musleabi`) 빌드 환경 (Nix derivation 또는 툴체인)
 - [ ] **초경량 프레임버퍼 드라이버**:
   - `/dev/fb0` 더블 버퍼링 기반 60fps 드라이버 초기화
-- [ ] **운영 시스템 & 인프라 모니터링 수집기 (Host)**:
-  - **호스트 리소스**: CPU/GPU 클록·온도·로드율, RAM/Swap, NVMe 잔여량
-  - **핵심 systemd 서비스**: `hermes-agent`, `tailscaled`, `beszel-agent` 등 가동 여부(`active`/`failed`) 헬스체크
-  - **컨테이너 현황**: Docker/Podman 실행 중인 컨테이너 수 및 상태
-  - **홈랩 인프라 연동**: Beszel 허브 API 및 Tailscale 네트워크 노드 상태 수집
-  - **실시간 트래픽**: 네트워크 인터페이스 실시간 RX/TX 전송량(Mbps)
+- [ ] **EcoAI OpsHub 인프라 수집기 연동 (Host Python)**:
+  - **호스트 `mo` 로컬 리소스**: CPU/GPU 클록·온도·로드율, RAM, NVMe 잔여량
+  - **핵심 로컬 서비스**: `hermes-agent`, `tailscaled`, `beszel-agent` 헬스체크
+  - **Proxmox VE 클러스터 (8대 노드)**:
+    - HCI 클러스터: `cluster-01 ~ 06` (R660, R760, R770) 가동 상태
+    - AI 트레이닝 서버: `train-01, train-02` (R6625) 및 `cluster-05` (L40 GPU×2) 사용률/온도
+    - Ceph 10G 스토리지 풀 잔여 용량
+  - **Kubernetes (ecoai 클러스터)**:
+    - `~/.kube/ecoai.config` 연동: 클러스터 노드 Ready 상태 및 `ecoai-prod` 핵심 파드 헬스체크
+    - 장애 파드(CrashLoopBackOff, Pending) 즉각 감지
+  - **DBHub / PostgreSQL**:
+    - DBHub 헬스체크 도구 연동 (커넥션 풀, 복제 지연, 캐시 적중률 요약)
+  - **실시간 트래픽**: 인터페이스별 실시간 RX/TX 전송량(Mbps)
 - [ ] **LVGL 기반 대시보드 화면 구성 (Sidecar)**:
-  - **화면 1 (시계 & 메트릭)**: 레트로 플립/사이버펑크 시계 + CPU/GPU 게이지 (부드러운 스무딩 애니메이션)
-  - **화면 2 (홈랩 SOC 대시보드)**: 
-    - 주요 서비스 헬스체크 신호등 (정상: 초록 LED / 장애: 빨강 점멸)
-    - 실시간 네트워크 트래픽 스파크라인(파형 그래프)
-    - 컨테이너 및 홈랩 노드 상태 카드
-  - **장애 알림**: 모니터링 중인 서비스 다운 시 전면 화면에 시각적 경고 팝업
+  - **화면 1 (시계 & 로컬 메트릭)**: 레트로 플립/사이버펑크 시계 + CPU/GPU 게이지
+  - **화면 2 (EcoAI OpsHub 관제탑 - NOC 모드)**: 
+    - Proxmox 8개 노드 신호등 (`C01~C06`, `T01~T02` 🟢)
+    - K8s 파드 상태 요약 (`ecoai: 48/48 Running 🟢`)
+    - L40 GPU 부하 게이지 및 실시간 네트워크 트래픽 파형 그래프
+    - Hermes Agent 가동 상태 카드
+  - **장애 알림 팝업**: K8s 파드 에러나 Proxmox 노드 오프라인 시 전면 화면에 붉은색 경고 배너 팝업
 - [ ] **1Hz 텔레메트리 파서**:
   - 본체가 1초마다 보내는 JSON/바이너리 메트릭을 수신하여 60fps로 부드럽게 UI 보간 갱신
 
 ---
 
-### Phase 5: 터치 스트림덱 & 장애 대응 매크로 패드
+### Phase 5: 터치 스트림덱 & OpsHub 물리 컨트롤러
 - [ ] **터치 입력 파이프라인**:
   - `/dev/input/event0` 및 `tslib` 연동으로 터치 좌표 및 제스처(탭, 스와이프) 감지
-  - 화면 스와이프로 시계 모드 ↔ 시스템 모니터링 대시보드 전환
+  - 화면 스와이프로 시계 모드 ↔ OpsHub 관제탑 대시보드 즉시 전환
 - [ ] **업링크 프로토콜 구현**:
-  - 화면 터치 시 시리얼/SSH 링크로 본체에 이벤트 패킷 전송 (예: `BUTTON:SERVICE_RESTART:hermes`)
-- [ ] **본체 액션 매퍼 개발**:
-  - **장애 원터치 복구**: 화면의 빨간 불(다운된 서비스)을 터치하면 즉시 `systemctl restart` 트리거
-  - **스트림덱 매크로**: 볼륨 조절/음소거, Docker 컨테이너 재시작, 백업 실행, 스마트홈 제어
+  - 화면 터치 시 시리얼/SSH 링크로 본체에 이벤트 패킷 전송 (예: `ACTION:K8S:ROLLOUT_RESTART`)
+- [ ] **본체 액션 매퍼 & OpsHub 연동**:
+  - **장애 원터치 복구**: 화면의 빨간 불(다운된 서비스/파드)을 터치하면 즉시 복구 명령 트리거
+  - **Proxmox VM 퀵 컨트롤**: 특정 개발용 VM 시작/중지/재부팅
+  - **Hermes Agent 작업 트리거**: 터치 한 번으로 일일 인프라 감사 리포트 생성
+  - **미디어/시스템 매크로**: 볼륨 조절, 조명 제어, 백업 스크립트 수동 실행
 
 ---
 
