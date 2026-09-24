@@ -22,9 +22,10 @@ stat -c '%G %a' /dev/ttyS0
 id -nG
 ```
 
-`/dev/ttyS0`의 그룹이 `dialout`이고 현재 사용자 그룹 목록에 없으면 `sudo usermod -aG dialout "$USER"`를 실행한 뒤 재부팅합니다. 다른 그룹이면 해당 장치의 실제 소유 그룹과 권한을 먼저 확인합니다.
+`/dev/ttyS0`의 그룹이 `dialout`이고 현재 사용자 그룹 목록에 없다면 [Bazzite의 그룹 추가 안내](https://docs.bazzite.gg/Advanced/add-user-to-group/)를 따라 `dialout`을 등록한 뒤 재부팅합니다. Bazzite에서는 `dialout`이 `/usr/lib/group`에만 있고 `/etc/group`에 없을 수 있어 `usermod`만으로는 등록되지 않습니다. 다른 그룹이면 해당 장치의 실제 소유 그룹과 권한을 먼저 확인합니다.
 
 ```bash
+cd ~/.local/share/am02-subscreen
 sudo loginctl enable-linger "$USER"
 mkdir -p ~/.config/systemd/user
 cp bazzite/am02-subscreen.service ~/.config/systemd/user/
@@ -45,6 +46,8 @@ journalctl --user -u am02-subscreen.service -f
 cd ~/.local/share/am02-subscreen
 git pull --ff-only
 uv sync --frozen --no-dev
+cp bazzite/am02-subscreen.service ~/.config/systemd/user/
+systemctl --user daemon-reload
 systemctl --user restart am02-subscreen.service
 ```
 

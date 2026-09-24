@@ -16,6 +16,7 @@ def test_wait_time_sync(tmp_path, mode, expected_calls):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     counter = tmp_path / "calls"
+    sleep_log = tmp_path / "sleep_calls"
     timedatectl = bin_dir / "timedatectl"
     timedatectl.write_text(
         '#!/bin/sh\n'
@@ -32,13 +33,17 @@ def test_wait_time_sync(tmp_path, mode, expected_calls):
     )
     timedatectl.chmod(0o755)
     sleep = bin_dir / "sleep"
-    sleep.write_text("#!/bin/sh\nexit 0\n")
+    sleep.write_text('#!/bin/sh\nprintf "%s\\n" "$1" >> "$TEST_SLEEP_LOG"\n')
     sleep.chmod(0o755)
     env = os.environ | {
         "PATH": f"{bin_dir}:{os.environ['PATH']}",
         "TEST_COUNTER": str(counter),
         "TEST_MODE": mode,
+        "TEST_SLEEP_LOG": str(sleep_log),
     }
     result = subprocess.run(["bash", str(SCRIPT)], env=env, timeout=10)
     assert result.returncode == 0
     assert int(counter.read_text()) == expected_calls
+    assert (sleep_log.read_text().splitlines() if sleep_log.exists() else []) == [
+        "1"
+    ] * (expected_calls if mode in ("never", "error") else expected_calls - 1)
