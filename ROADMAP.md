@@ -10,7 +10,7 @@
 
 ## 비전 (Vision)
 
-**AM02 Sidecar**는 메인 PC(오토바이 본체, x86_64 NixOS) 옆에 나란히 붙어 함께 달리는 보조 컴퓨터(사이드카, Allwinner F1C200s ARM Linux)를 완전 개방하는 프로젝트입니다.
+**AM02 Sidecar**는 메인 PC(오토바이 본체, x86_64 Bazzite) 옆에 나란히 붙어 함께 달리는 보조 컴퓨터(사이드카, Allwinner F1C200s ARM Linux)를 완전 개방하는 프로젝트입니다.
 
 제조사의 폐쇄적인 순정 펌웨어와 고질적인 시계 오차(flag_5081 래치 버그)를 극복하고, 전면 4인치 터치 디스플레이를 **60fps 고주사율 홈랩 대시보드** 및 **터치 스트림덱(물리 매크로 패드)**으로 자유롭게 제어하는 것을 목표로 합니다.
 
@@ -23,7 +23,7 @@
 
 ```mermaid
 graph TD
-    subgraph Host[AM02 본체 - x86_64 NixOS]
+    subgraph Host[AM02 본체 - x86_64 Bazzite]
         H1[호스트 수집 데몬 - Python]
         H2[시스템 메트릭스 - hwmon/proc/Docker]
         H3[NTP 동기화 시각]
@@ -65,7 +65,7 @@ graph TD
 
 | 계층 | 실행 환경 | 주력 언어/도구 | 갱신 주기 | 핵심 역할 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Host Tier** | AM02 본체 (x86_64 NixOS) | Python 3 | 1 Hz (1초 1회) | CPU/GPU 온도, RAM, 스토리지, Docker 상태, 네트워크 트래픽, NTP 시각 수집 및 경량 패킷 송신 |
+| **Host Tier** | AM02 본체 (x86_64 Bazzite) | Python 3 | 1 Hz (1초 1회) | CPU/GPU 온도, RAM, 스토리지, Docker 상태, 네트워크 트래픽, NTP 시각 수집 및 경량 패킷 송신 |
 | **Link Tier** | 메인보드 내장 UART (`/dev/ttyS0`) | PPP / SLIP / Raw UART | - | 115200 baud 양방향 통신 (호스트 메트릭 전송 + 서브스크린 터치 이벤트 수신) |
 | **Sidecar Tier** | F1C200s (ARM9 533MHz, 64MB RAM) | C (LVGL) 또는 Rust | 60 fps (실시간) | 프레임버퍼(`/dev/fb0`) 60fps 애니메이션 렌더링, 게이지 스무딩, 터치스크린 이벤트 감지 |
 
@@ -95,7 +95,7 @@ graph TD
 - [ ] **시리얼 루트 콘솔 개방**:
   - `/etc/init.d/S99runOnUi`의 포트 독점 해제
   - `/etc/inittab`의 `/dev/ttyS0` 시리얼 로그인 쉘(`getty`) 활성화
-- [ ] **검증**: 본체 NixOS에서 `picocom -b 115200 /dev/ttyS0`로 root 로그인 검증
+- [ ] **검증**: 본체 Bazzite에서 `picocom -b 115200 /dev/ttyS0`로 root 로그인 검증
 
 ---
 
@@ -169,7 +169,7 @@ graph TD
 
 | 마일스톤 | 상태 | 비고 |
 | :--- | :--- | :--- |
-| Phase 0: 순정 프로토콜 데몬 | 완료 | v0.1.0 릴리즈, NixOS 서비스 가동 중 |
+| Phase 0: 순정 프로토콜 데몬 | 완료 | v0.1.0 릴리즈, NixOS 서비스 구현 완료 |
 | Phase 1: Sidecar 진입 및 쉘 개방 | **준비 중 (최우선)** | SD 카드 백업 및 시리얼 쉘 개방 대기 |
 | Phase 2: IP over Serial & SSH | 계획됨 | PPP/Dropbear 파이프라인 구성 |
 | Phase 3: 시간 래치 버그 영구 해결 | 계획됨 | flag_5081 무력화 |
