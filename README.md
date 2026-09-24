@@ -1,12 +1,54 @@
 # AYANEO AM-02 Sidecar
 
-AYANEO AM-02 미니 PC 본체(x86_64 NixOS)와 전면 보조 컴퓨터(Allwinner F1C200s ARM Linux)를 연결하는 **Sidecar** 프로젝트입니다.
+AYANEO AM-02 미니 PC 본체(x86_64 Bazzite)와 전면 보조 컴퓨터(Allwinner F1C200s ARM Linux)를 연결하는 **Sidecar** 프로젝트입니다.
 
 현재 내부 시리얼 링크(`/dev/ttyS0`, 115200 8N1)를 통해 실시간 시스템 정보(시계, CPU/GPU 온도)를 전송하는 경량 Linux 데몬(v0.1.0)이 구현되어 있으며, 향후 서브스크린 독립화 및 커스텀 UI/스트림덱으로 확장될 예정입니다. ([로드맵](ROADMAP.md) 참조)
 
 ---
 
 ## 🚀 빠른 시작 (Quick Start)
+
+### Bazzite 서비스 설정
+
+본체에서 [Homebrew](https://docs.bazzite.gg/Installing_and_Managing_Software/Homebrew/)로 `uv`를 설치하고 저장소를 서비스가 참조하는 경로에 배치합니다.
+
+```bash
+brew install uv
+mkdir -p ~/.local/share
+git clone https://github.com/deuxksy/sidecar.git ~/.local/share/am02-subscreen
+cd ~/.local/share/am02-subscreen
+uv sync --frozen --no-dev
+stat -c '%G %a' /dev/ttyS0
+id -nG
+```
+
+`/dev/ttyS0`의 그룹이 `dialout`이고 현재 사용자 그룹 목록에 없으면 `sudo usermod -aG dialout "$USER"`를 실행한 뒤 재부팅합니다. 다른 그룹이면 해당 장치의 실제 소유 그룹과 권한을 먼저 확인합니다.
+
+```bash
+sudo loginctl enable-linger "$USER"
+mkdir -p ~/.config/systemd/user
+cp bazzite/am02-subscreen.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now am02-subscreen.service
+```
+
+`linger`는 로그인 전에도 user service를 시작합니다. 서비스 상태와 로그는 다음 명령으로 확인합니다.
+
+```bash
+systemctl --user status am02-subscreen.service
+journalctl --user -u am02-subscreen.service -f
+```
+
+업데이트 후에는 의존성을 lockfile에 맞추고 서비스를 재시작합니다.
+
+```bash
+cd ~/.local/share/am02-subscreen
+git pull --ff-only
+uv sync --frozen --no-dev
+systemctl --user restart am02-subscreen.service
+```
+
+서비스는 NTP 동기화를 최대 약 60초 기다립니다. 그동안 동기화되지 않으면 데몬을 시작하므로 첫 프레임에서만 시각을 받아들이는 순정 펌웨어의 표시 시각이 틀릴 수 있습니다.
 
 ### 테스트 및 빌드
 
@@ -18,10 +60,10 @@ uv run pytest
 nix build .#am02-subscreen
 
 # 로컬 직접 실행
-python3 -m am02_subscreen /dev/ttyS0 --layout layout.json
+uv run am02-subscreend /dev/ttyS0 --layout layout.json
 ```
 
-### NixOS 서비스 설정
+### NixOS 서비스 설정 (기존 배포)
 
 Flake 입력에 추가하고 서비스를 활성화합니다:
 
@@ -56,6 +98,7 @@ hwmon sysfs ────collect()───▶ layout.json ────encode()�
 - [빠른 시작 가이드](#-빠른-시작-quick-start) - 로컬 테스트 및 개발 환경 구성
 
 ### 2. 하우투 가이드 (How-To Guides)
+- [Bazzite 서비스 배포](#bazzite-서비스-설정) - native systemd user service 등록 절차
 - [NixOS 서비스 배포](#nixos-서비스-설정) - AM02 전용 NixOS 데몬 등록 절차
 
 ### 3. 참고자료 (Reference)

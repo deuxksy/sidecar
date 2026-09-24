@@ -1,0 +1,12 @@
+[Unit]
+Description=AM02 subscreen system info daemon
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/bash %h/.local/share/am02-subscreen/bazzite/wait-time-sync.sh
+ExecStart=%h/.local/share/am02-subscreen/.venv/bin/am02-subscreend /dev/ttyS0 --layout %h/.local/share/am02-subscreen/layout.json
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

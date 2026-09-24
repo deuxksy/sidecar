@@ -6,6 +6,7 @@ AYANEO AM-02 전면 서브스크린(Allwinner F1C200s 임베디드 리눅스)에
 - **Sensors** (`src/am02_subscreen/sensors.py`): `/sys/class/hwmon`에서 k10temp(Tctl), amdgpu(edge) 온도 및 로컬 시각(KST) 수집.
 - **Protocol** (`src/am02_subscreen/protocol.py`, `layout.json`): `layout.json` 스키마 기반 필드 인코딩. 프레임 앞에 4B CRC32(LE)를 붙여 총 253바이트(249B payload + 4B CRC) 전송.
 - **Transport** (`src/am02_subscreen/transport.py`): `/dev/ttyS0` (115200 baud, 8N1) 시리얼 통신, 에러 시 지수 백오프 재연결.
+- **Bazzite Service** (`bazzite/am02-subscreen.service`): `uv` venv를 실행하는 systemd user service. `wait-time-sync.sh`로 첫 프레임 전 NTP 동기화를 최대 약 60초 대기.
 - **Nix Module** (`nix/module.nix`, `flake.nix`): NixOS systemd 서비스 `services.am02-subscreen`.
 
 ## Commands & Workflows
@@ -14,6 +15,6 @@ AYANEO AM-02 전면 서브스크린(Allwinner F1C200s 임베디드 리눅스)에
 - **Run Local**: `python3 -m am02_subscreen /dev/ttyS0 --layout layout.json`
 
 ## Critical Gotchas
-- **UART Port**: USB CDC-ACM이 아닌 보드 내장 16550A UART (`/dev/ttyS0`). `dialout` 그룹 권한 필수.
+- **UART Port**: USB CDC-ACM이 아닌 보드 내장 16550A UART (`/dev/ttyS0`). Bazzite에서는 장치 소유 그룹과 사용자 권한 확인 필수.
 - **CRC Placement**: CRC32는 반드시 249바이트 페이로드 **앞(prepend)**에 위치해야 함 (뒤에 붙이면 MCU 무응답).
 - **MCU RTC Latch**: 서브스크린 펌웨어는 `year!=0`인 첫 프레임 수신 시 1회만 RTC를 동기화(`flag_5081`)하고 이후 프레임의 시간 필드는 무시함.
